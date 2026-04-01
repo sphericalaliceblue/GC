@@ -39,6 +39,8 @@ function addTask(taskInfo) {
     today,
     today,
     JSON.stringify(notifyDates),
+    taskInfo.replyTo    || CONFIG.LINE_WORKS.CHANNEL_ID,
+    taskInfo.isChannel  !== undefined ? taskInfo.isChannel : true,
   ];
 
   sheet.appendRow(row);
@@ -127,12 +129,14 @@ function getTasksToNotifyToday() {
       const daysLeft    = calcDaysLeft(row[COL.DEADLINE]);
 
       result.push({
-        rowIndex:  i + 1, // スプレッドシートの実際の行番号
-        taskId:    row[COL.ID],
-        taskName:  row[COL.TASK_NAME],
-        deadline:  deadline,
-        daysLeft:  daysLeft,
-        status:    status,
+        rowIndex:   i + 1, // スプレッドシートの実際の行番号
+        taskId:     row[COL.ID],
+        taskName:   row[COL.TASK_NAME],
+        deadline:   deadline,
+        daysLeft:   daysLeft,
+        status:     status,
+        replyTo:    row[COL.REPLY_TO]    || CONFIG.LINE_WORKS.CHANNEL_ID,
+        isChannel:  row[COL.REPLY_IS_CH] !== false, // 未設定の場合はチャンネル宛とみなす
       });
     }
   }

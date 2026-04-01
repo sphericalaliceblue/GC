@@ -22,11 +22,12 @@ function checkDeadlines() {
   for (const task of tasks) {
     try {
       sendTaskNotification(
-        CONFIG.LINE_WORKS.CHANNEL_ID,
+        task.replyTo,
         task.taskId,
         task.taskName,
         task.deadline,
-        task.daysLeft
+        task.daysLeft,
+        task.isChannel
       );
       console.log(`通知送信完了: ${task.taskId}`);
       Utilities.sleep(1000); // 連続送信の間隔を空ける

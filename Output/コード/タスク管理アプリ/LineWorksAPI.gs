@@ -4,29 +4,32 @@
 // ============================================================
 
 /**
- * テキストメッセージをグループチャンネルに送信する
- * @param {string} text - 送信するテキスト
+ * テキストメッセージを送信する
+ * @param {string}  text      - 送信するテキスト
+ * @param {string}  target    - 送信先のチャンネルIDまたはユーザーID（省略時はCONFIGのCHANNEL_IDを使用）
+ * @param {boolean} isChannel - true ならチャンネル宛、false ならユーザー宛
  */
-function sendTextMessage(text) {
+function sendTextMessage(text, target = CONFIG.LINE_WORKS.CHANNEL_ID, isChannel = true) {
   const message = {
     content: {
       type: 'text',
       text: text,
     },
   };
-  sendMessage(CONFIG.LINE_WORKS.CHANNEL_ID, message, true);
+  sendMessage(target, message, isChannel);
 }
 
 /**
  * ボタン付きの通知メッセージを送信する
  * ボタンが5つのため、2つのメッセージに分けて送信する
- * @param {string} userId    - 送信先のユーザーID
- * @param {string} taskId    - タスクID
- * @param {string} taskName  - タスク名
- * @param {string} deadline  - 期限（YYYY-MM-DD）
- * @param {number} daysLeft  - 残り日数
+ * @param {string}  target    - 送信先のチャンネルIDまたはユーザーID
+ * @param {string}  taskId    - タスクID
+ * @param {string}  taskName  - タスク名
+ * @param {string}  deadline  - 期限（YYYY-MM-DD）
+ * @param {number}  daysLeft  - 残り日数
+ * @param {boolean} isChannel - true ならチャンネル宛、false ならユーザー宛
  */
-function sendTaskNotification(userId, taskId, taskName, deadline, daysLeft) {
+function sendTaskNotification(target, taskId, taskName, deadline, daysLeft, isChannel = true) {
   // --- メッセージ1: タスク情報と延期ボタン ---
   const daysText = daysLeft === 0 ? '今日が期限です！' : `あと ${daysLeft} 日`;
   const message1 = {
@@ -53,9 +56,9 @@ function sendTaskNotification(userId, taskId, taskName, deadline, daysLeft) {
     },
   };
 
-  sendMessage(userId, message1, true);
+  sendMessage(target, message1, isChannel);
   Utilities.sleep(500); // メッセージ順序を保つために少し待つ
-  sendMessage(userId, message2, true);
+  sendMessage(target, message2, isChannel);
 }
 
 /**

@@ -12,15 +12,37 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const eventType = data.type;
 
-    if (eventType === 'message' && data.content && data.content.type === 'text') {
-      const text    = data.content.text;
-      const userId  = data.source.userId;
+    // ユーザーがBotとのトークを開始したとき → ウェルカムメッセージを返してタスク登録はしない
+    if (eventType === 'follow') {
+      const userId = data.source && data.source.userId;
+      if (userId) {
+        sendTextMessage(
+          'こんにちは！タスク管理Botです。\n「〇〇を△日までにやる」のように送ってもらえればタスクを登録します。',
+          userId,
+          false
+        );
+      }
+
+    } else if (eventType === 'message' && data.content && data.content.type === 'text') {
+      // userIdがない場合はシステムメッセージとみなして無視する
+      if (!data.source || !data.source.userId) return;
+
+      let text        = data.content.text;
+      const userId    = data.source.userId;
+      // 返信先：グループチャットならそのチャンネル、DMなら送信者本人
+      const isChannel = !!data.source.channelId;
+      const replyTo   = isChannel ? data.source.channelId : userId;
+
       // ボタンタップ由来のメッセージ（extend|... / on_track|... / complete|...）はPostbackとして処理
       if (/^(extend|on_track|complete)\|/.test(text)) {
-        handlePostback(text, userId);
+        handlePostback(text, userId, replyTo, isChannel);
       } else {
-        // 通常のテキストメッセージ → Difyで解析してタスク登録
-        handleTextMessage(text, userId);
+        // グループトークはBotへのメンションがある場合のみ処理
+        if (isChannel) {
+          if (!isBotMentioned(data.content)) return;
+          text = stripMentions(text);
+        }
+        handleTextMessage(text, userId, replyTo, isChannel);
       }
 
     }
@@ -36,24 +58,46 @@ function doPost(e) {
 }
 
 /**
+ * Botがメンションされているかどうかをチェックする
+ * LINEワークスはメンションをテキスト先頭に "@Bot名" として埋め込む
+ * @param {Object} content - メッセージのcontentオブジェクト
+ * @returns {boolean}
+ */
+function isBotMentioned(content) {
+  return content.text.includes('@' + CONFIG.LINE_WORKS.BOT_NAME);
+}
+
+/**
+ * テキスト先頭の "@Bot名 " 部分を除去して返す
+ * 例: "@タスク管理アプリ \n\nタスク内容" → "タスク内容"
+ * @param {string} text - 元のメッセージテキスト
+ * @returns {string} メンションを除いたテキスト
+ */
+function stripMentions(text) {
+  return text.replace(/^@[^\n]+\n+/, '').trim();
+}
+
+/**
  * テキストメッセージを受け取ったときの処理
  * Difyに渡してタスク情報を抽出し、スプレッドシートに保存する
  */
-function handleTextMessage(text, userId) {
+function handleTextMessage(text, userId, replyTo, isChannel) {
   // Difyでタスク情報を解析
   const taskInfo = callDify(text);
 
   if (!taskInfo || !taskInfo.taskName) {
     // タスクとして認識できなかった場合
-    sendTextMessage('申し訳ありません、タスクの内容を読み取れませんでした。\n「〇〇を△日までにやる」のように教えていただけますか？');
+    sendTextMessage('申し訳ありません、タスクの内容を読み取れませんでした。\n「〇〇を△日までにやる」のように教えていただけますか？', replyTo, isChannel);
     return;
   }
 
   // スプレッドシートに保存（担当者未指定の場合は送信者IDをセット）
   if (!taskInfo.assignee) taskInfo.assignee = userId;
+  taskInfo.replyTo   = replyTo;
+  taskInfo.isChannel = isChannel;
   const taskId = addTask(taskInfo);
 
-  // 登録完了をグループチャンネルに返信
+  // 登録完了を返信（送信元チャンネル or ユーザーへ）
   const deadline = taskInfo.deadline || '未設定';
   const reply =
     `タスクを登録しました！\n\n` +
@@ -62,14 +106,14 @@ function handleTextMessage(text, userId) {
     `ID：${taskId}\n\n` +
     `期限が近づいたらお知らせします。`;
 
-  sendTextMessage(reply);
+  sendTextMessage(reply, replyTo, isChannel);
 }
 
 /**
  * ボタンがタップされたときの処理
  * データ形式：「アクション|値|タスクID」（例: extend|3|T001）
  */
-function handlePostback(postbackData, userId) {
+function handlePostback(postbackData, userId, replyTo, isChannel) {
   const parts  = postbackData.split('|');
   const action = parts[0];
   const value  = parts[1];
@@ -95,6 +139,6 @@ function handlePostback(postbackData, userId) {
   }
 
   if (replyText) {
-    sendTextMessage(replyText);
+    sendTextMessage(replyText, replyTo, isChannel);
   }
 }

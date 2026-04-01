@@ -14,6 +14,7 @@ const CONFIG = {
     API_BASE:       'https://www.worksapis.com/v1.0',
     AUTH_URL:       'https://auth.worksmobile.com/oauth2/v2.0/token',
     BOT_ID:         '8608845',
+    BOT_NAME:       'タスク管理アプリ（GAS連携テスト）', // グループチャットでのメンション名
     CHANNEL_ID:     'c69c5a6e-4aaf-065a-aa16-f5abad947a34',   // 通知を送る先のチャンネルID or ユーザーID
     CLIENT_ID:      'an_UO4EFx5M9wvqvcz1k',
     CLIENT_SECRET:  'IDgXxP7i8C',
@@ -44,6 +45,8 @@ const COL = {
   CREATED_AT:   6,
   UPDATED_AT:   7,
   NOTIFY_DATES: 8, // 通知予定日リスト（JSON配列を文字列として保存）
+  REPLY_TO:     9, // 返信先ID（チャンネルIDまたはユーザーID）
+  REPLY_IS_CH: 10, // チャンネル宛かどうか（TRUE / FALSE）
 };
 
 // ステータスの定義
