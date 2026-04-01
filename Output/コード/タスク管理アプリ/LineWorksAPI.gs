@@ -4,18 +4,17 @@
 // ============================================================
 
 /**
- * テキストメッセージを送信する
- * @param {string} userId - 送信先のユーザーID
- * @param {string} text   - 送信するテキスト
+ * テキストメッセージをグループチャンネルに送信する
+ * @param {string} text - 送信するテキスト
  */
-function sendTextMessage(userId, text) {
+function sendTextMessage(text) {
   const message = {
     content: {
       type: 'text',
       text: text,
     },
   };
-  sendMessage(userId, message);
+  sendMessage(CONFIG.LINE_WORKS.CHANNEL_ID, message, true);
 }
 
 /**
@@ -33,16 +32,12 @@ function sendTaskNotification(userId, taskId, taskName, deadline, daysLeft) {
   const message1 = {
     content: {
       type: 'button_template',
-      altText: `【期限のお知らせ】${taskName}`,
-      template: {
-        type: 'buttons',
-        text: `📋 ${taskName}\n📅 期限：${deadline}（${daysText}）\n\n延期が必要な場合はボタンを押してください。`,
-        actions: [
-          { type: 'postback', label: '1日延期', data: `extend|1|${taskId}` },
-          { type: 'postback', label: '3日延期', data: `extend|3|${taskId}` },
-          { type: 'postback', label: '5日延期', data: `extend|5|${taskId}` },
-        ],
-      },
+      contentText: `【期限のお知らせ】${taskName}\n期限：${deadline}（${daysText}）\n\n延期が必要な場合はボタンを押してください。`,
+      actions: [
+        { type: 'message', label: '1日延期', text: `extend|1|${taskId}` },
+        { type: 'message', label: '3日延期', text: `extend|3|${taskId}` },
+        { type: 'message', label: '5日延期', text: `extend|5|${taskId}` },
+      ],
     },
   };
 
@@ -50,29 +45,31 @@ function sendTaskNotification(userId, taskId, taskName, deadline, daysLeft) {
   const message2 = {
     content: {
       type: 'button_template',
-      altText: '進捗を教えてください',
-      template: {
-        type: 'buttons',
-        text: '現在の進捗を教えてください。',
-        actions: [
-          { type: 'postback', label: '✅ 順調', data: `on_track||${taskId}` },
-          { type: 'postback', label: '🎉 完了', data: `complete||${taskId}` },
-        ],
-      },
+      contentText: '現在の進捗を教えてください。',
+      actions: [
+        { type: 'message', label: '順調', text: `on_track||${taskId}` },
+        { type: 'message', label: '完了', text: `complete||${taskId}` },
+      ],
     },
   };
 
-  sendMessage(userId, message1);
+  sendMessage(userId, message1, true);
   Utilities.sleep(500); // メッセージ順序を保つために少し待つ
-  sendMessage(userId, message2);
+  sendMessage(userId, message2, true);
 }
 
 /**
  * LINEワークスにメッセージを送信する（内部用）
+ * @param {string} target    - 送信先のユーザーIDまたはチャンネルID
+ * @param {Object} messageBody - メッセージ本文
+ * @param {boolean} toChannel  - true の場合はチャンネル宛（/channels/）で送信
  */
-function sendMessage(userId, messageBody) {
+function sendMessage(target, messageBody, toChannel = false) {
   const token = getAccessToken();
-  const url   = `${CONFIG.LINE_WORKS.API_BASE}/bots/${CONFIG.LINE_WORKS.BOT_ID}/users/${userId}/messages`;
+  const path  = toChannel
+    ? `channels/${target}`
+    : `users/${target}`;
+  const url   = `${CONFIG.LINE_WORKS.API_BASE}/bots/${CONFIG.LINE_WORKS.BOT_ID}/${path}/messages`;
 
   const options = {
     method:             'POST',
@@ -85,7 +82,8 @@ function sendMessage(userId, messageBody) {
   };
 
   const response = UrlFetchApp.fetch(url, options);
-  if (response.getResponseCode() !== 200) {
+  const code = response.getResponseCode();
+  if (code !== 200 && code !== 201) {
     console.error('メッセージ送信エラー:', response.getContentText());
   }
 }

@@ -13,16 +13,16 @@ function doPost(e) {
     const eventType = data.type;
 
     if (eventType === 'message' && data.content && data.content.type === 'text') {
-      // テキストメッセージ → Difyで解析してタスク登録
       const text    = data.content.text;
       const userId  = data.source.userId;
-      handleTextMessage(text, userId);
+      // ボタンタップ由来のメッセージ（extend|... / on_track|... / complete|...）はPostbackとして処理
+      if (/^(extend|on_track|complete)\|/.test(text)) {
+        handlePostback(text, userId);
+      } else {
+        // 通常のテキストメッセージ → Difyで解析してタスク登録
+        handleTextMessage(text, userId);
+      }
 
-    } else if (eventType === 'postback') {
-      // ボタンタップ → タスクのステータス・期限を更新
-      const postbackData = data.data;
-      const userId       = data.source.userId;
-      handlePostback(postbackData, userId);
     }
 
   } catch (err) {
@@ -45,23 +45,24 @@ function handleTextMessage(text, userId) {
 
   if (!taskInfo || !taskInfo.taskName) {
     // タスクとして認識できなかった場合
-    sendTextMessage(userId, '申し訳ありません、タスクの内容を読み取れませんでした。\n「〇〇を△日までにやる」のように教えていただけますか？');
+    sendTextMessage('申し訳ありません、タスクの内容を読み取れませんでした。\n「〇〇を△日までにやる」のように教えていただけますか？');
     return;
   }
 
-  // スプレッドシートに保存
+  // スプレッドシートに保存（担当者未指定の場合は送信者IDをセット）
+  if (!taskInfo.assignee) taskInfo.assignee = userId;
   const taskId = addTask(taskInfo);
 
-  // 登録完了をLINEワークスに返信
+  // 登録完了をグループチャンネルに返信
   const deadline = taskInfo.deadline || '未設定';
   const reply =
-    `✅ タスクを登録しました！\n\n` +
-    `📋 ${taskInfo.taskName}\n` +
-    `📅 期限：${deadline}\n` +
-    `🆔 ID：${taskId}\n\n` +
+    `タスクを登録しました！\n\n` +
+    `${taskInfo.taskName}\n` +
+    `期限：${deadline}\n` +
+    `ID：${taskId}\n\n` +
     `期限が近づいたらお知らせします。`;
 
-  sendTextMessage(userId, reply);
+  sendTextMessage(reply);
 }
 
 /**
@@ -80,20 +81,20 @@ function handlePostback(postbackData, userId) {
     // 期限を延期する
     const days = parseInt(value);
     const newDeadline = extendDeadline(taskId, days);
-    replyText = `📅 ${taskId} の期限を ${days}日 延ばしました。\n新しい期限：${newDeadline}`;
+    replyText = `${taskId} の期限を ${days}日 延ばしました。\n新しい期限：${newDeadline}`;
 
   } else if (action === 'on_track') {
     // 順調に更新
     updateTaskStatus(taskId, STATUS.ON_TRACK);
-    replyText = `👍 ${taskId} のステータスを「順調」に更新しました！`;
+    replyText = `${taskId} のステータスを「順調」に更新しました！`;
 
   } else if (action === 'complete') {
     // 完了に更新
     updateTaskStatus(taskId, STATUS.COMPLETE);
-    replyText = `🎉 ${taskId} が完了しました！お疲れ様でした！`;
+    replyText = `${taskId} が完了しました！お疲れ様でした！`;
   }
 
   if (replyText) {
-    sendTextMessage(userId, replyText);
+    sendTextMessage(replyText);
   }
 }

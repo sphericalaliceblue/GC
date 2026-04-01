@@ -12,7 +12,7 @@ function callDify(userMessage) {
   const url = `${CONFIG.DIFY.API_BASE}/chat-messages`;
 
   const body = {
-    inputs:        {},
+    inputs:        { today: Utilities.formatDate(new Date(), 'Asia/Tokyo', 'yyyy-MM-dd') },
     query:         userMessage,
     response_mode: 'blocking',
     user:          CONFIG.DIFY.USER_ID,
