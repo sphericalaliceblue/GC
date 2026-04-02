@@ -30,28 +30,31 @@ function sendTextMessage(text, target = CONFIG.LINE_WORKS.CHANNEL_ID, isChannel 
  * @param {boolean} isChannel - true ならチャンネル宛、false ならユーザー宛
  */
 function sendTaskNotification(target, taskId, taskName, deadline, daysLeft, isChannel = true) {
-  // --- メッセージ1: タスク情報と延期ボタン ---
   const daysText = daysLeft === 0 ? '今日が期限です！' : `あと ${daysLeft} 日`;
+
+  // --- メッセージ1: タスク情報と進捗ボタン ---
   const message1 = {
     content: {
       type: 'button_template',
-      contentText: `【期限のお知らせ】${taskName}\n期限：${deadline}（${daysText}）\n\n延期が必要な場合はボタンを押してください。`,
+      contentText: `【期限のお知らせ】${taskName}\n期限：${deadline}（${daysText}）\n\n現在の進捗を教えてください。`,
       actions: [
-        { type: 'message', label: '1日延期', text: `extend|1|${taskId}` },
-        { type: 'message', label: '3日延期', text: `extend|3|${taskId}` },
-        { type: 'message', label: '5日延期', text: `extend|5|${taskId}` },
+        { type: 'message', label: '順調',    text: `on_track||${taskId}` },
+        { type: 'message', label: '完了',    text: `complete||${taskId}` },
+        { type: 'message', label: '問題発生', text: `issue||${taskId}` },
+        { type: 'message', label: '中断',    text: `suspend||${taskId}` },
       ],
     },
   };
 
-  // --- メッセージ2: 進捗ボタン ---
+  // --- メッセージ2: 延期ボタン ---
   const message2 = {
     content: {
       type: 'button_template',
-      contentText: '現在の進捗を教えてください。',
+      contentText: '延期が必要な場合はボタンを押してください。',
       actions: [
-        { type: 'message', label: '順調', text: `on_track||${taskId}` },
-        { type: 'message', label: '完了', text: `complete||${taskId}` },
+        { type: 'message', label: '1日延期', text: `extend|1|${taskId}` },
+        { type: 'message', label: '3日延期', text: `extend|3|${taskId}` },
+        { type: 'message', label: '5日延期', text: `extend|5|${taskId}` },
       ],
     },
   };

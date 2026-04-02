@@ -33,7 +33,7 @@ function addTask(taskInfo) {
     taskId,
     taskInfo.taskName   || '',
     taskInfo.deadline   || '',
-    STATUS.NOT_STARTED,
+    STATUS.IN_PROGRESS,
     taskInfo.requester  || 'ユーザー',
     taskInfo.assignee   || '',
     today,
@@ -113,8 +113,8 @@ function getTasksToNotifyToday() {
     const row    = data[i];
     const status = row[COL.STATUS];
 
-    // 完了タスクはスキップ
-    if (status === STATUS.COMPLETE) continue;
+    // 完了・中断タスクはスキップ
+    if (status === STATUS.COMPLETE || status === STATUS.SUSPENDED) continue;
 
     // 通知予定日リストに今日が含まれているか確認
     let notifyDates = [];

@@ -51,8 +51,9 @@ const COL = {
 
 // ステータスの定義
 const STATUS = {
-  NOT_STARTED: '未着手',
   IN_PROGRESS: '進行中',
   ON_TRACK:    '順調',
   COMPLETE:    '完了',
+  ISSUE:       '問題発生',
+  SUSPENDED:   '中断',
 };

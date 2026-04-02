@@ -33,8 +33,12 @@ function doPost(e) {
       const isChannel = !!data.source.channelId;
       const replyTo   = isChannel ? data.source.channelId : userId;
 
-      // ボタンタップ由来のメッセージ（extend|... / on_track|... / complete|...）はPostbackとして処理
-      if (/^(extend|on_track|complete)\|/.test(text)) {
+      // LINEワークスがBot追加時に自動送信するシステムメッセージは無視する
+      const SYSTEM_MESSAGES = ['利用開始'];
+      if (SYSTEM_MESSAGES.includes(text.trim())) return;
+
+      // ボタンタップ由来のメッセージ（extend|... / on_track|... / complete|... / issue|... / suspend|...）はPostbackとして処理
+      if (/^(extend|on_track|complete|issue|suspend)\|/.test(text)) {
         handlePostback(text, userId, replyTo, isChannel);
       } else {
         // グループトークはBotへのメンションがある場合のみ処理
@@ -136,6 +140,16 @@ function handlePostback(postbackData, userId, replyTo, isChannel) {
     // 完了に更新
     updateTaskStatus(taskId, STATUS.COMPLETE);
     replyText = `${taskId} が完了しました！お疲れ様でした！`;
+
+  } else if (action === 'issue') {
+    // 問題発生に更新
+    updateTaskStatus(taskId, STATUS.ISSUE);
+    replyText = `${taskId} のステータスを「問題発生」にしました。対応状況はお知らせください。`;
+
+  } else if (action === 'suspend') {
+    // 中断に更新
+    updateTaskStatus(taskId, STATUS.SUSPENDED);
+    replyText = `${taskId} を「中断」にしました。再開の際はお知らせください。`;
   }
 
   if (replyText) {
