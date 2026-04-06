@@ -36,17 +36,18 @@ const CONFIG = {
 
 // スプレッドシートの列番号（0始まり）
 const COL = {
-  ID:           0,
-  TASK_NAME:    1,
-  DEADLINE:     2,
-  STATUS:       3,
-  REQUESTER:    4,
-  ASSIGNEE:     5,
-  CREATED_AT:   6,
-  UPDATED_AT:   7,
-  NOTIFY_DATES: 8, // 通知予定日リスト（JSON配列を文字列として保存）
-  REPLY_TO:     9, // 返信先ID（チャンネルIDまたはユーザーID）
-  REPLY_IS_CH: 10, // チャンネル宛かどうか（TRUE / FALSE）
+  ID:            0,
+  TASK_NAME:     1,
+  DEADLINE:      2,
+  STATUS:        3,
+  REQUESTER:     4,
+  ASSIGNEE:      5,
+  CREATED_AT:    6,
+  UPDATED_AT:    7,
+  NOTIFY_DATES:  8, // 通知予定日リスト（JSON配列を文字列として保存）
+  REPLY_TO:      9, // 返信先ID（チャンネルIDまたはユーザーID）
+  REPLY_IS_CH:  10, // チャンネル宛かどうか（TRUE / FALSE）
+  ORIGINAL_MSG: 11, // 依頼者が送った元のメッセージ
 };
 
 // ステータスの定義

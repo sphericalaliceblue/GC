@@ -31,16 +31,17 @@ function addTask(taskInfo) {
 
   const row = [
     taskId,
-    taskInfo.taskName   || '',
-    taskInfo.deadline   || '',
+    taskInfo.taskName    || '',
+    taskInfo.deadline    || '',
     STATUS.IN_PROGRESS,
-    taskInfo.requester  || 'ユーザー',
-    taskInfo.assignee   || '',
+    taskInfo.requester   || 'ユーザー',
+    taskInfo.assignee    || '',
     today,
     today,
     JSON.stringify(notifyDates),
-    taskInfo.replyTo    || CONFIG.LINE_WORKS.CHANNEL_ID,
-    taskInfo.isChannel  !== undefined ? taskInfo.isChannel : true,
+    taskInfo.replyTo     || CONFIG.LINE_WORKS.CHANNEL_ID,
+    taskInfo.isChannel   !== undefined ? taskInfo.isChannel : true,
+    taskInfo.originalText || '',
   ];
 
   sheet.appendRow(row);
@@ -142,6 +143,18 @@ function getTasksToNotifyToday() {
   }
 
   return result;
+}
+
+/**
+ * タスクIDから元の依頼メッセージを取得する
+ * @param {string} taskId - タスクID（例: T001）
+ * @returns {string} 元のメッセージテキスト（なければ空文字）
+ */
+function getOriginalMessage(taskId) {
+  const sheet = getSheet();
+  const row   = findRowByTaskId(sheet, taskId);
+  if (!row) return '';
+  return sheet.getRange(row, COL.ORIGINAL_MSG + 1).getValue() || '';
 }
 
 /**

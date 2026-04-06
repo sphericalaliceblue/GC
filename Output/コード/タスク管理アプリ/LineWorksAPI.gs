@@ -20,6 +20,28 @@ function sendTextMessage(text, target = CONFIG.LINE_WORKS.CHANNEL_ID, isChannel 
 }
 
 /**
+ * タスク登録前の確認メッセージをボタン付きで送信する
+ * @param {string}  target    - 送信先のチャンネルIDまたはユーザーID
+ * @param {boolean} isChannel - true ならチャンネル宛、false ならユーザー宛
+ * @param {Object}  taskInfo  - 確認対象のタスク情報
+ * @param {string}  userId    - 依頼者のユーザーID（キャッシュキーとして使用）
+ */
+function sendTaskConfirmation(target, isChannel, taskInfo, userId) {
+  const deadline = taskInfo.deadline || '未設定';
+  const message = {
+    content: {
+      type: 'button_template',
+      contentText: `タスクの内容を確認してください。\n\n📋 ${taskInfo.taskName}\n📅 期限：${deadline}\n\nこの内容で登録しますか？`,
+      actions: [
+        { type: 'message', label: '登録する',      text: `confirm_ok|${userId}` },
+        { type: 'message', label: '期限を変更する', text: `change_deadline|${userId}` },
+      ],
+    },
+  };
+  sendMessage(target, message, isChannel);
+}
+
+/**
  * ボタン付きの通知メッセージを送信する
  * ボタンが5つのため、2つのメッセージに分けて送信する
  * @param {string}  target    - 送信先のチャンネルIDまたはユーザーID
@@ -59,9 +81,22 @@ function sendTaskNotification(target, taskId, taskName, deadline, daysLeft, isCh
     },
   };
 
+  // --- メッセージ3: 元文章確認ボタン ---
+  const message3 = {
+    content: {
+      type: 'button_template',
+      contentText: '依頼時の文章を確認できます。',
+      actions: [
+        { type: 'message', label: '元文章を見る', text: `view_msg|${taskId}` },
+      ],
+    },
+  };
+
   sendMessage(target, message1, isChannel);
   Utilities.sleep(500); // メッセージ順序を保つために少し待つ
   sendMessage(target, message2, isChannel);
+  Utilities.sleep(500);
+  sendMessage(target, message3, isChannel);
 }
 
 /**
