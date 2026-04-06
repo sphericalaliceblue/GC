@@ -81,10 +81,18 @@ function extendDeadline(taskId, days) {
     return '';
   }
 
-  // 現在の期限を取得して日数を加算
-  const currentDeadlineStr = sheet.getRange(row, COL.DEADLINE + 1).getValue();
-  const currentDeadline    = new Date(currentDeadlineStr);
-  currentDeadline.setDate(currentDeadline.getDate() + days);
+  // 現在の期限を取得
+  // getValue()はDate型・文字列・数値のいずれかで返るため、必ずformatDateで文字列化してから処理する
+  const rawValue           = sheet.getRange(row, COL.DEADLINE + 1).getValue();
+  const currentDeadlineStr = formatDate(rawValue instanceof Date ? rawValue : new Date(String(rawValue)));
+
+  // 文字列をパーツに分解して日数を加算（タイムゾーンに依存しない確実な方法）
+  const parts = currentDeadlineStr.split('-');
+  const currentDeadline = new Date(
+    parseInt(parts[0]),
+    parseInt(parts[1]) - 1,
+    parseInt(parts[2]) + days
+  );
 
   const newDeadlineStr = formatDate(currentDeadline);
 
@@ -126,7 +134,8 @@ function getTasksToNotifyToday() {
     }
 
     if (notifyDates.includes(today)) {
-      const deadline    = formatDate(new Date(row[COL.DEADLINE]));
+      const rawDeadline = row[COL.DEADLINE];
+      const deadline    = formatDate(rawDeadline instanceof Date ? rawDeadline : new Date(String(rawDeadline)));
       const daysLeft    = calcDaysLeft(row[COL.DEADLINE]);
 
       result.push({
